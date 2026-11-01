@@ -1,77 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 MQTT Global Lights</title>
-  <!-- Load HiveMQ MQTT Web client library via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
-  <style>
-    body { background: #0f172a; color: #f8fafc; font-family: sans-serif; text-align: center; padding: 2rem; }
-    h1 { color: #38bdf8; }
-    .card { background: #1e293b; padding: 1.5rem; margin: 1rem auto; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    button { padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin: 0.5rem; transition: 0.2s; }
-    .btn-on { background: #22c55e; color: white; }
-    .btn-off { background: #ef4444; color: white; }
-    button:active { transform: scale(0.95); }
-    #status { font-weight: bold; margin-bottom: 1.5rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .btn {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.85;
+        }
+        .btn-on {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-off {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
 </head>
 <body>
 
-  <h1>🌍 Global MQTT Light Control</h1>
-  <div id="status" style="color: orange;">Connecting to cloud broker...</div>
+    <div class="container">
+        <h1>Light Control</h1>
+        <button class="btn btn-on" onclick="controlLight('http://192.168.1.160/all/on')">Turn ON</button>
+        <button class="btn btn-off" onclick="controlLight('http://192.168.1.160/all/off')">Turn OFF</button>
+    </div>
 
-  <div class="card">
-    <h3>Master Control</h3>
-    <button class="btn-on" onclick="sendMQTT('all_on')">ALL ON</button>
-    <button class="btn-off" onclick="sendMQTT('all_off')">ALL OFF</button>
-  </div>
-
-  <div class="card">
-    <h3>ELK-BLEDOB</h3>
-    <button class="btn-on" onclick="sendMQTT('elk_on')">ON</button>
-    <button class="btn-off" onclick="sendMQTT('elk_off')">OFF</button>
-  </div>
-
-  <div class="card">
-    <h3>GATT--DEMO</h3>
-    <button class="btn-on" onclick="sendMQTT('gatt_on')">ON</button>
-    <button class="btn-off" onclick="sendMQTT('gatt_off')">OFF</button>
-  </div>
-
-  <div class="card">
-    <h3>CLK-BLEDDM</h3>
-    <button class="btn-on" onclick="sendMQTT('clk_on')">ON</button>
-    <button class="btn-off" onclick="sendMQTT('clk_off')">OFF</button>
-  </div>
-
-  <script>
-    // Connect to HiveMQ Public broker over WebSockets
-    const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const topic = 'esp32/lights/9930904303';
-
-    client.on('connect', function () {
-      document.getElementById('status').innerText = 'Connected to Cloud (Online)';
-      document.getElementById('status').style.color = '#22c55e';
-    });
-
-    client.on('error', function (error) {
-      document.getElementById('status').innerText = 'Connection Error!';
-      document.getElementById('status').style.color = '#ef4444';
-      console.error(error);
-    });
-
-    function sendMQTT(command) {
-      client.publish(topic, command, function (err) {
-        if (!err) {
-          console.log(`Sent command: ${command}`);
-        } else {
-          alert('Failed to send command');
+    <script>
+        function controlLight(url) {
+            // mode: 'no-cors' prevents CORS blocking if the light's web server doesn't send CORS headers
+            fetch(url, { mode: 'no-cors' })
+                .then(() => console.log(`Request sent to ${url}`))
+                .catch(error => console.error('Error sending request:', error));
         }
-      });
-    }
-  </script>
+    </script>
 
 </body>
 </html>
