@@ -3,62 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Global Light Control</title>
+  <title>ESP32 MQTT Global Lights</title>
+  <!-- Load HiveMQ MQTT Web client library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
   <style>
     body { background: #0f172a; color: #f8fafc; font-family: sans-serif; text-align: center; padding: 2rem; }
-    h1 { margin-bottom: 2rem; color: #38bdf8; }
+    h1 { color: #38bdf8; }
     .card { background: #1e293b; padding: 1.5rem; margin: 1rem auto; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     button { padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin: 0.5rem; transition: 0.2s; }
     .btn-on { background: #22c55e; color: white; }
     .btn-off { background: #ef4444; color: white; }
     button:active { transform: scale(0.95); }
+    #status { font-weight: bold; margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
 
-  <h1>🌍 Global Light Panel</h1>
+  <h1>🌍 Global MQTT Light Control</h1>
+  <div id="status" style="color: orange;">Connecting to cloud broker...</div>
 
   <div class="card">
     <h3>Master Control</h3>
-    <button class="btn-on" onclick="sendCmd('all', 'on')">ALL ON</button>
-    <button class="btn-off" onclick="sendCmd('all', 'off')">ALL OFF</button>
+    <button class="btn-on" onclick="sendMQTT('all_on')">ALL ON</button>
+    <button class="btn-off" onclick="sendMQTT('all_off')">ALL OFF</button>
   </div>
 
   <div class="card">
     <h3>ELK-BLEDOB</h3>
-    <button class="btn-on" onclick="sendCmd('elk', 'on')">ON</button>
-    <button class="btn-off" onclick="sendCmd('elk', 'off')">OFF</button>
+    <button class="btn-on" onclick="sendMQTT('elk_on')">ON</button>
+    <button class="btn-off" onclick="sendMQTT('elk_off')">OFF</button>
   </div>
 
   <div class="card">
     <h3>GATT--DEMO</h3>
-    <button class="btn-on" onclick="sendCmd('gatt', 'on')">ON</button>
-    <button class="btn-off" onclick="sendCmd('gatt', 'off')">OFF</button>
+    <button class="btn-on" onclick="sendMQTT('gatt_on')">ON</button>
+    <button class="btn-off" onclick="sendMQTT('gatt_off')">OFF</button>
   </div>
 
   <div class="card">
     <h3>CLK-BLEDDM</h3>
-    <button class="btn-on" onclick="sendCmd('clk', 'on')">ON</button>
-    <button class="btn-off" onclick="sendCmd('clk', 'off')">OFF</button>
+    <button class="btn-on" onclick="sendMQTT('clk_on')">ON</button>
+    <button class="btn-off" onclick="sendMQTT('clk_off')">OFF</button>
   </div>
 
   <script>
-    const API_URL = '/api/control';
+    // Connect to HiveMQ Public broker over WebSockets
+    const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+    const topic = 'esp32/lights/control';
 
-    async function sendCmd(light, action) {
-      try {
-        let res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ light, action })
-        });
-        let data = await res.json();
-        console.log("Success:", data);
-        alert(`Command sent: ${light.toUpperCase()} -> ${action.toUpperCase()}`);
-      } catch (err) {
-        console.error("Error sending command:", err);
-        alert("Failed to send command!");
-      }
+    client.on('connect', function () {
+      document.getElementById('status').innerText = 'Connected to Cloud (Online)';
+      document.getElementById('status').style.color = '#22c55e';
+    });
+
+    client.on('error', function (error) {
+      document.getElementById('status').innerText = 'Connection Error!';
+      document.getElementById('status').style.color = '#ef4444';
+      console.error(error);
+    });
+
+    function sendMQTT(command) {
+      client.publish(topic, command, function (err) {
+        if (!err) {
+          console.log(`Sent command: ${command}`);
+        } else {
+          alert('Failed to send command');
+        }
+      });
     }
   </script>
 
