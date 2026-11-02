@@ -3,65 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Light Control</title>
+    <title>Global ESP32 Light Control</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-        }
-        .container {
-            text-align: center;
-            background: #ffffff;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            margin-bottom: 1.5rem;
-            color: #333;
-        }
-        .btn {
-            font-size: 1.2rem;
-            font-weight: bold;
-            padding: 12px 24px;
-            margin: 0 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn:hover {
-            opacity: 0.85;
-        }
-        .btn-on {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .btn-off {
-            background-color: #f44336;
-            color: white;
-        }
+        body { background: #0f0f0f; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 400px; }
+        button { padding: 12px 20px; margin: 5px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        .btn-on { background: #22c55e; }
+        .btn-off { background: #ef4444; }
+        .btn-all { background: #3b82f6; width: 40%; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Light Control</h1>
-        <button class="btn btn-on" onclick="controlLight('http://192.168.1.160/all/on')">Turn ON</button>
-        <button class="btn btn-off" onclick="controlLight('http://192.168.1.160/all/off')">Turn OFF</button>
+    <h1>Global Light Dashboard</h1>
+
+    <div class="card">
+        <h3>Master Control</h3>
+        <button class="btn-all" onclick="sendMQTT('esp32-all', 'ON')">ALL ON</button>
+        <button class="btn-all" onclick="sendMQTT('esp32-all', 'OFF')">ALL OFF</button>
+    </div>
+
+    <div class="card">
+        <h3>ELK-BLEDOB</h3>
+        <button class="btn-on" onclick="sendMQTT('esp32-elk', 'ON')">ON</button>
+        <button class="btn-off" onclick="sendMQTT('esp32-elk', 'OFF')">OFF</button>
+    </div>
+
+    <div class="card">
+        <h3>GATT--DEMO</h3>
+        <button class="btn-on" onclick="sendMQTT('esp32-gatt', 'ON')">ON</button>
+        <button class="btn-off" onclick="sendMQTT('esp32-gatt', 'OFF')">OFF</button>
+    </div>
+
+    <div class="card">
+        <h3>CLK-BLEDDM</h3>
+        <button class="btn-on" onclick="sendMQTT('esp32-clk', 'ON')">ON</button>
+        <button class="btn-off" onclick="sendMQTT('esp32-clk', 'OFF')">OFF</button>
     </div>
 
     <script>
-        function controlLight(url) {
-            // mode: 'no-cors' prevents CORS blocking if the light's web server doesn't send CORS headers
-            fetch(url, { mode: 'no-cors' })
-                .then(() => console.log(`Request sent to ${url}`))
-                .catch(error => console.error('Error sending request:', error));
+        const AIO_USERNAME = "himnishisop";
+        const AIO_KEY = "aio_LoKX42iKepwGpxiY8IZ3tHUgvBWW";
+
+        function sendMQTT(feed, value) {
+            fetch(`https://io.adafruit.com/api/v2/${AIO_USERNAME}/feeds/${feed}/data`, {
+                method: 'POST',
+                headers: {
+                    'X-AIO-Key': AIO_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ value: value })
+            })
+            .then(response => console.log(`Sent ${value} to ${feed}`))
+            .catch(err => console.error("Error:", err));
         }
     </script>
 
