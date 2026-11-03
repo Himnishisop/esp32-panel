@@ -3,61 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global ESP32 Light Control</title>
+    <title>BOMBEAT Custom Room UI</title>
     <style>
-        body { background: #0f0f0f; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 400px; }
-        button { padding: 12px 20px; margin: 5px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; }
-        .btn-on { background: #22c55e; }
-        .btn-off { background: #ef4444; }
-        .btn-all { background: #3b82f6; width: 40%; }
+        body {
+            background-color: #0d0d0f;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #1a1a1e;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 320px;
+            border: 1px solid #2a2a32;
+        }
+        h2 { margin-bottom: 5px; font-weight: 600; color: #a259ff; }
+        p { color: #8e8e93; font-size: 14px; margin-bottom: 25px; }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        button {
+            flex: 1;
+            padding: 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #onBtn { background-color: #2f855a; color: white; }
+        #onBtn:hover { background-color: #38a169; }
+        #offBtn { background-color: #2d3748; color: #a0aec0; }
+        #offBtn:hover { background-color: #4a5568; }
+        .status-indicator {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #718096;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Global Light Dashboard</h1>
-
     <div class="card">
-        <h3>Master Control</h3>
-        <button class="btn-all" onclick="sendMQTT('esp32-all', 'ON')">ALL ON</button>
-        <button class="btn-all" onclick="sendMQTT('esp32-all', 'OFF')">ALL OFF</button>
-    </div>
+        <h2>BOMBEAT UI</h2>
+        <p>ELK-BLEDOB Controller</p>
+        
+        <div class="btn-group">
+            <button id="onBtn" onclick="sendCmd('on')">ON</button>
+            <button id="offBtn" onclick="sendCmd('off')">OFF</button>
+        </div>
 
-    <div class="card">
-        <h3>ELK-BLEDOB</h3>
-        <button class="btn-on" onclick="sendMQTT('esp32-elk', 'ON')">ON</button>
-        <button class="btn-off" onclick="sendMQTT('esp32-elk', 'OFF')">OFF</button>
-    </div>
-
-    <div class="card">
-        <h3>GATT--DEMO</h3>
-        <button class="btn-on" onclick="sendMQTT('esp32-gatt', 'ON')">ON</button>
-        <button class="btn-off" onclick="sendMQTT('esp32-gatt', 'OFF')">OFF</button>
-    </div>
-
-    <div class="card">
-        <h3>CLK-BLEDDM</h3>
-        <button class="btn-on" onclick="sendMQTT('esp32-clk', 'ON')">ON</button>
-        <button class="btn-off" onclick="sendMQTT('esp32-clk', 'OFF')">OFF</button>
+        <div class="status-indicator" id="status">Status: Connecting...</div>
     </div>
 
     <script>
-        const AIO_USERNAME = "himnishisop";
-        const AIO_KEY = "aio_aINW79eeibP8GvrvLLJqnU9ltNxy";
+        // REPLACE WITH YOUR ESP32's IP ADDRESS
+        const espIp = "192.168.1.104"; 
 
-        function sendMQTT(feed, value) {
-            fetch(`https://io.adafruit.com/api/v2/${AIO_USERNAME}/feeds/${feed}/data`, {
-                method: 'POST',
-                headers: {
-                    'X-AIO-Key': AIO_KEY,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ value: value })
-            })
-            .then(response => console.log(`Sent ${value} to ${feed}`))
-            .catch(err => console.error("Error:", err));
+        async function sendCmd(action) {
+            document.getElementById("status").innerText = `Sending ${action.toUpperCase()}...`;
+            try {
+                let response = await fetch(`http://${espIp}/${action}`);
+                let data = await response.json();
+                document.getElementById("status").innerText = `Status: Light is ${data.state.toUpperCase()}`;
+            } catch (error) {
+                document.getElementById("status").innerText = "Error: Failed to reach ESP32";
+                console.error(error);
+            }
         }
-    </script>
 
+        // Optional: Poll current state on load
+        async function checkState() {
+            try {
+                let response = await fetch(`http://${espIp}/state`);
+                let data = await response.json();
+                document.getElementById("status").innerText = `Status: Light is ${data.state.toUpperCase()}`;
+            } catch (e) {
+                document.getElementById("status").innerText = "Offline / Disconnected";
+            }
+        }
+
+        checkState();
+    </script>
 </body>
 </html>
