@@ -1,100 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOMBEAT Custom Room UI</title>
-    <style>
-        body {
-            background-color: #0d0d0f;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .card {
-            background: #1a1a1e;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            width: 320px;
-            border: 1px solid #2a2a32;
-        }
-        h2 { margin-bottom: 5px; font-weight: 600; color: #a259ff; }
-        p { color: #8e8e93; font-size: 14px; margin-bottom: 25px; }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        button {
-            flex: 1;
-            padding: 15px 0;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        #onBtn { background-color: #2f855a; color: white; }
-        #onBtn:hover { background-color: #38a169; }
-        #offBtn { background-color: #2d3748; color: #a0aec0; }
-        #offBtn:hover { background-color: #4a5568; }
-        .status-indicator {
-            margin-top: 20px;
-            font-size: 13px;
-            color: #718096;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOMBEAT Custom Lighting Studio</title>
+  <style>
+    body {
+      background-color: #0b0c10;
+      color: #c5c6c7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #1f2833;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      width: 350px;
+      text-align: center;
+      border: 1px solid #45a29e;
+    }
+    h2 { color: #66fcf1; margin-bottom: 5px; }
+    p { font-size: 13px; color: #c5c6c7; margin-bottom: 20px; }
+    
+    .section {
+      background: #0b0c10;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #45a29e;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 100%;
+      height: 60px;
+      border-radius: 10px;
+      cursor: pointer;
+      background: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-on { background-color: #45a29e; color: #0b0c10; }
+    .btn-off { background-color: #c5c6c7; color: #0b0c10; }
+    
+    .target-selector {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    #debug {
+      font-family: monospace;
+      font-size: 11px;
+      color: #66fcf1;
+      margin-top: 15px;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>BOMBEAT UI</h2>
-        <p>ELK-BLEDOB Controller</p>
-        
-        <div class="btn-group">
-            <button id="onBtn" onclick="sendCmd('on')">ON</button>
-            <button id="offBtn" onclick="sendCmd('off')">OFF</button>
-        </div>
+  <div class="container">
+    <h2>BOMBEAT STUDIO</h2>
+    <p>Custom BLE Light Controller</p>
 
-        <div class="status-indicator" id="status">Status: Connecting...</div>
+    <!-- RGB Section for ELK & CLK -->
+    <div class="section">
+      <div class="section-title">RGB Control (ELK & CLK)</div>
+      <input type="color" id="picker" value="#ff00ff" onchange="sendColor(this.value)">
+      
+      <div class="target-selector">
+        <label><input type="radio" name="target" value="both" checked> Both</label>
+        <label><input type="radio" name="target" value="elk"> ELK</label>
+        <label><input type="radio" name="target" value="clk"> CLK</label>
+      </div>
     </div>
 
-    <script>
-        // REPLACE WITH YOUR ESP32's IP ADDRESS
-        const espIp = "192.168.1.104"; 
+    <!-- GATT--DEMO Power Section -->
+    <div class="section">
+      <div class="section-title">GATT--DEMO (ON/OFF Only)</div>
+      <div class="btn-group">
+        <button class="btn-on" onclick="sendGatt('on')">TURN ON</button>
+        <button class="btn-off" onclick="sendGatt('off')">TURN OFF</button>
+      </div>
+    </div>
 
-        async function sendCmd(action) {
-            document.getElementById("status").innerText = `Sending ${action.toUpperCase()}...`;
-            try {
-                let response = await fetch(`http://${espIp}/${action}`);
-                let data = await response.json();
-                document.getElementById("status").innerText = `Status: Light is ${data.state.toUpperCase()}`;
-            } catch (error) {
-                document.getElementById("status").innerText = "Error: Failed to reach ESP32";
-                console.error(error);
-            }
-        }
+    <div id="debug">Status: Ready</div>
+  </div>
 
-        // Optional: Poll current state on load
-        async function checkState() {
-            try {
-                let response = await fetch(`http://${espIp}/state`);
-                let data = await response.json();
-                document.getElementById("status").innerText = `Status: Light is ${data.state.toUpperCase()}`;
-            } catch (e) {
-                document.getElementById("status").innerText = "Offline / Disconnected";
-            }
-        }
+  <script>
+    // Set your ESP32 IP Address here
+    const espIp = "192.168.1.104"; 
 
-        checkState();
-    </script>
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.replace('#', ''), 16);
+      return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255
+      };
+    }
+
+    async function sendColor(hexValue) {
+      const rgb = hexToRgb(hexValue);
+      const target = document.querySelector('input[name="target"]:checked').value;
+      const url = `http://${espIp}/color?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}&target=${target}`;
+
+      document.getElementById("debug").innerText = `Sending Hex Packet for RGB(${rgb.r},${rgb.g},${rgb.b})...`;
+
+      try {
+        let res = await fetch(url);
+        let data = await res.json();
+        document.getElementById("debug").innerText = `Packet Sent! Output: 7E 00 05 03 ${rgb.r.toString(16).padStart(2,'0')} ${rgb.g.toString(16).padStart(2,'0')} ${rgb.b.toString(16).padStart(2,'0')} 00 EF`;
+      } catch (err) {
+        document.getElementById("debug").innerText = "Error reaching ESP32";
+      }
+    }
+
+    async function sendGatt(state) {
+      const url = `http://${espIp}/gatt?state=${state}`;
+      document.getElementById("debug").innerText = `Sending GATT--DEMO ${state.toUpperCase()}...`;
+
+      try {
+        let res = await fetch(url);
+        let data = await res.json();
+        document.getElementById("debug").innerText = `GATT--DEMO is now ${state.toUpperCase()}`;
+      } catch (err) {
+        document.getElementById("debug").innerText = "Error reaching ESP32";
+      }
+    }
+  </script>
 </body>
 </html>
