@@ -1,159 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BOMBEAT Hybrid Lighting Studio</title>
-  <style>
-    body {
-      background-color: #0b0c10;
-      color: #c5c6c7;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: #1f2833;
-      padding: 25px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-      width: 340px;
-      text-align: center;
-      border: 1px solid #45a29e;
-    }
-    h2 { color: #66fcf1; margin-bottom: 5px; }
-    p { font-size: 12px; color: #c5c6c7; margin-bottom: 20px; }
-    
-    .section {
-      background: #0b0c10;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-    .section-title {
-      font-size: 13px;
-      font-weight: bold;
-      color: #45a29e;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    input[type="color"] {
-      -webkit-appearance: none;
-      border: none;
-      width: 100%;
-      height: 50px;
-      border-radius: 10px;
-      cursor: pointer;
-      background: none;
-    }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-    }
-    button {
-      flex: 1;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: bold;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .btn-on { background-color: #45a29e; color: #0b0c10; }
-    .btn-off { background-color: #c5c6c7; color: #0b0c10; }
-    
-    .target-selector {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 10px;
-      font-size: 12px;
-    }
-    #debug {
-      font-family: monospace;
-      font-size: 11px;
-      color: #66fcf1;
-      margin-top: 10px;
-      word-break: break-all;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOMBEAT Hub - Movie Mode</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f1015; color: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; width: 320px; }
+        h2 { margin-bottom: 5px; font-weight: 600; letter-spacing: 0.5px; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: 10px; }
+        .btn-movie { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
+        .btn-movie:active { transform: scale(0.97); }
+        .btn-end { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-end:active { transform: scale(0.97); }
+        .status { margin-top: 20px; font-size: 13px; color: #64748b; }
+    </style>
 </head>
 <body>
-
-  <div class="container">
-    <h2>BOMBEAT STUDIO</h2>
-    <p>Hybrid Cloud + Local Controller</p>
-
-    <!-- RGB Color Picker for ELK & CLK -->
-    <div class="section">
-      <div class="section-title">RGB Color (ELK & CLK)</div>
-      <input type="color" id="picker" value="#ff00ff" onchange="sendColor(this.value)">
-      
-      <div class="target-selector">
-        <label><input type="radio" name="target" value="both" checked> Both</label>
-        <label><input type="radio" name="target" value="elk"> ELK</label>
-        <label><input type="radio" name="target" value="clk"> CLK</label>
-      </div>
+    <div class="card">
+        <h2>BOMBEAT Hub</h2>
+        <p>Smart Room Control Center</p>
+        <button class="btn btn-movie" onclick="toggleMovieMode('on')">🎬 Enable Movie Mode</button>
+        <button class="btn btn-end" onclick="toggleMovieMode('off')">🛑 End Movie Mode</button>
+        <div class="status" id="statusText">System Ready</div>
     </div>
+    <script>
+        const ESP_IP = "http://192.168.1.199";
 
-    <!-- GATT--DEMO Power Section -->
-    <div class="section">
-      <div class="section-title">GATT--DEMO (On/Off)</div>
-      <div class="btn-group">
-        <button class="btn-on" onclick="sendGatt('on')">TURN ON</button>
-        <button class="btn-off" onclick="sendGatt('off')">TURN OFF</button>
-      </div>
-    </div>
-
-    <div id="debug">Status: Ready (IP: 192.168.1.199)</div>
-  </div>
-
-  <script>
-    // Locked static IP address of your ESP32
-    const espIp = "192.168.1.199"; 
-
-    function hexToRgb(hex) {
-      const bigint = parseInt(hex.replace('#', ''), 16);
-      return {
-        r: (bigint >> 16) & 255,
-        g: (bigint >> 8) & 255,
-        b: bigint & 255
-      };
-    }
-
-    async function sendColor(hexValue) {
-      const rgb = hexToRgb(hexValue);
-      const target = document.querySelector('input[name="target"]:checked').value;
-      const url = `http://${espIp}/color?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}&target=${target}`;
-
-      document.getElementById("debug").innerText = `Sending RGB to ${target.toUpperCase()}...`;
-
-      try {
-        let res = await fetch(url);
-        let data = await res.json();
-        document.getElementById("debug").innerText = `Success! Color applied.`;
-      } catch (err) {
-        document.getElementById("debug").innerText = "Error: Failed to reach ESP32 UI server.";
-        console.error(err);
-      }
-    }
-
-    async function sendGatt(state) {
-      const url = `http://${espIp}/gatt?state=${state}`;
-      document.getElementById("debug").innerText = `Setting GATT to ${state.toUpperCase()}...`;
-
-      try {
-        let res = await fetch(url);
-        let data = await res.json();
-        document.getElementById("debug").innerText = `GATT--DEMO is now ${state.toUpperCase()}`;
-      } catch (err) {
-        document.getElementById("debug").innerText = "Error: Failed to reach ESP32 UI server.";
-        console.error(err);
-      }
-    }
-  </script>
+        function toggleMovieMode(action) {
+            document.getElementById('statusText').innerText = "Processing command...";
+            fetch(ESP_IP + '/moviemode/' + action)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('statusText').innerText = data.movieMode ? "🎬 Movie Mode Active" : "💡 Normal Mode Active";
+                })
+                .catch(err => {
+                    document.getElementById('statusText').innerText = "⚠️ Connection error to ESP32";
+                });
+        }
+    </script>
 </body>
 </html>
